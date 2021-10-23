@@ -19,3 +19,6 @@ require_once( PREFIX_RECOMMENDED_PRODUCTS_DIR . 'admin/admin-ui-render.php' );
 
 // Do plugin operations
 require_once( PREFIX_RECOMMENDED_PRODUCTS_DIR . 'functions/do.php' );
+
+// Frontend
+require_once( PREFIX_RECOMMENDED_PRODUCTS_DIR . 'public/class-recommended-products.php' );
