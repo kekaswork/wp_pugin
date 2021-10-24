@@ -31,24 +31,11 @@ function prefix_general_settings_field_callback() {
 	$settings = prefix_get_settings();
 
 	// General Settings. Name of form element should be same as the setting name in register_setting(). ?>
-	
 	<fieldset>
-	
-		<!-- Setting one -->
-		<input type="checkbox" name="prefix_settings[setting_one]" id="prefix_settings[setting_one]" value="1" 
-			<?php if ( isset( $settings['setting_one'] ) ) { checked( '1', $settings['setting_one'] ); } ?>>
-			<label for="prefix_settings[setting_one]"><?php _e('Setting one', 'recommended-products') ?></label>
-			<br>
-			
-		<!-- Setting two -->
-		<input type="checkbox" name="prefix_settings[setting_two]" id="prefix_settings[setting_two]" value="1" 
-			<?php if ( isset( $settings['setting_two'] ) ) { checked( '1', $settings['setting_two'] ); } ?>>
-			<label for="prefix_settings[setting_two]"><?php _e('Setting two', 'recommended-products') ?></label>
-			<br>
 		
 		<!-- Text Input -->
-		<input type="text" name="prefix_settings[text_input]" class="regular-text" value="<?php if ( isset( $settings['text_input'] ) && ( ! empty($settings['text_input']) ) ) echo esc_attr($settings['text_input']); ?>"/>
-		<p class="description"><?php _e('Description of the text input field', 'recommended-products'); ?></p>
+		<input type="text" name="prefix_settings[block_title]" class="regular-text" value="<?php if ( isset( $settings['block_title'] ) && ( ! empty($settings['block_title']) ) ) echo esc_attr($settings['block_title']); ?>"/>
+		<p class="description"><?php _e('Block Title', 'recommended-products'); ?></p>
 		
 	</fieldset>
 	<?php

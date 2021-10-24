@@ -5,6 +5,7 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 	class Recommended_Products {
 		protected static $instance;
 		private $shortcode = 'recommended_products';
+		private $block_settings;
 
 		// Singleton pattern
 		public static function set_instance() {
@@ -25,21 +26,26 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 
 				// Add products' block via woocommerce hook
 				add_action( 'woocommerce_after_cart', array( $this, 'recommended_products_wc_hook' ) );
+
+				// Plugin settings data
+				$this->block_settings = get_option( 'prefix_settings', false );
 			}
 		}
 
 		/**
+		 *
+		 * Render Products block on 'recommended-block' shortcode
+		 *
 		 * @param $atts
 		 * @param $content
 		 * @param $tag
-		 *
-		 * Render Products block on 'recommended-block' shortcode
 		 *
 		 * @return string
 		 */
 		public function recommended_products_shortcode( $atts, $content, $tag ) {
 			$current_cart_products = $this->get_current_cart_products_ids();
 			$products              = $this->get_products_ids( $current_cart_products );
+			$title                 = ( $this->block_settings && isset( $this->block_settings['block_title'] ) ) ? $this->block_settings['block_title'] : '';
 
 			if ( ! $products || ! is_array( $products ) || empty( $products ) ) {
 				return '';
@@ -50,9 +56,11 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 
 			<div class="woocommerce-recommended-products recommended">
 				<div class="recommended__wrapper">
-					<h3 class="recommended__title">
-						<?php esc_html_e( 'Recommended Products', 'recommended-products' ); ?>
-					</h3>
+					<?php if ( $title ) : ?>
+						<h3 class="recommended__title">
+							<?php echo esc_html( $title ); ?>
+						</h3>
+					<?php endif; ?>
 					<?php
 					// We are using default WooCommerce shortcode for displaying products list by their IDs, because it's the convenient and optimal approach
 					echo do_shortcode( '[products ids="' . implode( ',', $products ) . '"]' );
@@ -73,6 +81,7 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 		public function recommended_products_wc_hook() {
 			$current_cart_products = $this->get_current_cart_products_ids();
 			$products              = $this->get_products_ids( $current_cart_products );
+			$title                 = ( $this->block_settings && isset( $this->block_settings['block_title'] ) ) ? $this->block_settings['block_title'] : '';
 
 			if ( ! $products || ! is_array( $products ) || empty( $products ) ) {
 				return '';
@@ -83,9 +92,11 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 
 			<div class="woocommerce-recommended-products recommended">
 				<div class="recommended__wrapper">
-					<h3 class="recommended__title">
-						<?php esc_html_e( 'Recommended Products', 'recommended-products' ); ?>
-					</h3>
+					<?php if ( $title ) : ?>
+						<h3 class="recommended__title">
+							<?php echo esc_html( $title ); ?>
+						</h3>
+					<?php endif; ?>
 					<?php
 					// We are using default WooCommerce shortcode for displaying products list by their IDs, because it's the convenient and optimal approach
 					echo do_shortcode( '[products ids="' . implode( ',', $products ) . '"]' );
@@ -98,9 +109,10 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 		}
 
 		/**
-		 * @param array $current_products_ids
 		 *
 		 * Return 5 associated products from all orders history. If no 5 such products have been found, we add the most popular product
+		 *
+		 * @param array $current_products_ids
 		 *
 		 * @return array
 		 */
@@ -118,7 +130,7 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 
 			// If there are enough associated products return first 5 of them to the render function
 			if ( count( $associated_products_ids ) >= 5 ) {
-				return array_slice( $associated_products_ids, 5 );
+				return $associated_products_ids;
 			}
 
 			// If there are not enough associated products found, lets add the most popular products to the list
@@ -152,9 +164,10 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 		}
 
 		/**
-		 * @param array $products_ids
 		 *
 		 * Return array with products' ids, which have been in the same order with the listed products
+		 *
+		 * @param array $products_ids
 		 *
 		 * @return array
 		 */
@@ -193,12 +206,13 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 			// SQL Query. Select all OTHER (different from products of $products_ids list) products from all the orders of the $orders_ids array
 			$orders_other_products = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT a.meta_value as product_id FROM `".$wpdb->prefix."woocommerce_order_itemmeta` a
+					"SELECT DISTINCT a.meta_value as product_id FROM `".$wpdb->prefix."woocommerce_order_itemmeta` a
 								JOIN `".$wpdb->prefix."woocommerce_order_items` b
 								ON a.order_item_id = b.order_item_id
 								WHERE a.meta_key = '_product_id'
 								AND b.order_id IN (" . implode( ',', $orders_ids ) . ")
-								AND a.meta_value NOT IN (".implode( ',', $products_ids ).")"
+								AND a.meta_value NOT IN (".implode( ',', $products_ids ).")
+								LIMIT 5"
 				),
 				'ARRAY_A'
 			);
@@ -206,22 +220,20 @@ if ( ! class_exists( 'Recommended_Products' ) ) {
 				return array();
 			}
 
-			// Remove duplicates
-			return array_unique(
-				array_map(
-					function( $product ) {
-						return $product['product_id'];
-					},
-					$orders_other_products
-				)
+			return array_map(
+				function( $product ) {
+					return $product['product_id'];
+				},
+				$orders_other_products
 			);
 		}
 
 		/**
-		 * @param $excluded_products
-		 * @param int $number
 		 *
 		 * Returns N most popular products excluding some products
+		 *
+		 * @param $excluded_products
+		 * @param int $number
 		 *
 		 * @return array
 		 */
